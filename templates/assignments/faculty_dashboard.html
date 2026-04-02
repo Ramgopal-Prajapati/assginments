@@ -1,0 +1,272 @@
+{% extends "assignments/base.html" %}
+{% block title %}Faculty Dashboard — Samyak{% endblock %}
+{% block page_title %}Faculty Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div style="background: linear-gradient(135deg, rgba(0,210,200,0.15) 0%, rgba(108,60,225,0.1) 100%); border: 1px solid rgba(0,210,200,0.25); border-radius: 20px; padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden; display:flex; justify-content:space-between; align-items:center;">
+    <div style="position:absolute; right:-20px; top:-20px; font-size:120px; opacity:0.05;">👨‍🏫</div>
+    <div>
+        <div style="font-size:13px; color:var(--brand-secondary); font-weight:600; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Faculty Panel</div>
+        <div style="font-family:'Syne',sans-serif; font-size:28px; font-weight:800; margin-bottom:8px;">{{ user.get_display_name }}</div>
+        <div style="font-size:14px; color:var(--text-secondary);">
+            <i class="fas fa-chalkboard-teacher" style="color:var(--brand-secondary)"></i> {{ user.get_role_display }} &nbsp;·&nbsp;
+            <i class="fas fa-tag" style="color:var(--brand-secondary)"></i> {{ user.get_category_display }} Category
+        </div>
+    </div>
+    <button onclick="openModal('assignModal')" class="btn btn-primary" style="flex-shrink:0;">
+        <i class="fas fa-plus"></i> Assign New
+    </button>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+        <div class="stat-value">{{ total_assignments }}</div>
+        <div class="stat-label">Total Assigned</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+        <div class="stat-value">{{ pending }}</div>
+        <div class="stat-label">Pending by Students</div>
+    </div>
+    <div class="stat-card cyan">
+        <div class="stat-icon"><i class="fas fa-eye"></i></div>
+        <div class="stat-value">{{ pending_review.count }}</div>
+        <div class="stat-label">Awaiting Review</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+        <div class="stat-value">{{ completed }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon"><i class="fas fa-undo"></i></div>
+        <div class="stat-value">{{ rejected_count }}</div>
+        <div class="stat-label">Rejected</div>
+    </div>
+</div>
+
+<!-- Main Grid -->
+<div class="grid-2" style="align-items:start;">
+    <!-- Pending Review -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-hourglass-half" style="color:var(--warning)"></i>
+                    Submissions Awaiting Review
+                </div>
+                {% if pending_review %}
+                <span class="badge badge-pending">{{ pending_review.count }} pending</span>
+                {% endif %}
+            </div>
+
+            {% for sub in pending_review %}
+            <div style="background:var(--bg-card-2); border:1px solid var(--border-light); border-radius:12px; padding:16px; margin-bottom:12px;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                    <div style="flex:1;">
+                        <div style="font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:4px;">{{ sub.assignment.title }}</div>
+                        <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+                            <i class="fas fa-user"></i> {{ sub.student.get_display_name }} &nbsp;·&nbsp;
+                            <i class="fas fa-book"></i> {{ sub.course_name }}
+                        </div>
+                        <div style="font-size:13px; color:var(--text-secondary); line-height:1.5;">{{ sub.submission_details|truncatechars:120 }}</div>
+                        {% if sub.github_link %}
+                        <a href="{{ sub.github_link }}" target="_blank" style="font-size:12px; color:var(--brand-secondary); display:inline-flex; align-items:center; gap:5px; margin-top:8px; text-decoration:none;">
+                            <i class="fab fa-github"></i> View Repository
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-light);">
+                    <button onclick="openReviewModal({{ sub.id }}, 'accept', '{{ sub.assignment.title|escapejs }}')" class="btn btn-success btn-sm" style="flex:1;">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                    <button onclick="openReviewModal({{ sub.id }}, 'reject', '{{ sub.assignment.title|escapejs }}')" class="btn btn-danger btn-sm" style="flex:1;">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding:32px 16px;">
+                <div class="empty-icon" style="font-size:36px;"><i class="fas fa-check-circle" style="color:var(--success)"></i></div>
+                <div class="empty-title" style="font-size:15px;">All reviewed!</div>
+                <div class="empty-desc">No pending submissions to review.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- My Students + Recent Assignments -->
+    <div>
+        <!-- My Students -->
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-users" style="color:var(--brand-secondary)"></i>
+                    My Students ({{ user.get_category_display }})
+                </div>
+                <span style="font-size:12px; color:var(--text-muted);">{{ my_students.count }} students</span>
+            </div>
+            <div style="max-height:280px; overflow-y:auto;">
+                {% for student in my_students %}
+                <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-light);">
+                    <div style="width:34px; height:34px; background:linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0;">
+                        {{ student.get_display_name|slice:":1"|upper }}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:13px; font-weight:600;">{{ student.get_display_name }}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">{{ student.course_name }} · {{ student.student_id }}</div>
+                    </div>
+                    <div>
+                        {% with count=student.assignments_received.count %}
+                        <span style="font-size:11px; background:rgba(108,60,225,0.15); color:var(--brand-primary); padding:3px 8px; border-radius:6px;">{{ count }} assigned</span>
+                        {% endwith %}
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No students in your category yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Assignments -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-history" style="color:var(--brand-accent)"></i> Recent Assignments</div>
+                <a href="{% url 'all_assignments' %}" style="font-size:12px; color:var(--brand-secondary); text-decoration:none;">View All →</a>
+            </div>
+            {% for a in assigned %}
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border-light);">
+                <div>
+                    <span class="
+                        {% if a.status == 'pending' %}badge-pending
+                        {% elif a.status == 'submitted' %}badge-submitted
+                        {% elif a.status == 'completed' %}badge-completed
+                        {% else %}badge-rejected{% endif %}
+                        badge" style="font-size:10px;">{{ a.status }}</span>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.title }}</div>
+                    <div style="font-size:11px; color:var(--text-muted);">→ {{ a.assigned_to.get_display_name }} · {{ a.created_at|date:"d M" }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">No assignments created yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Create Assignment Modal -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('assignModal')"><i class="fas fa-times"></i></button>
+        <div class="modal-title"><i class="fas fa-plus-circle" style="color:var(--brand-primary)"></i> Assign New Task</div>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="create_assignment" value="1">
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Assignment Number</label>
+                    {{ form.assignment_number }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Due Date (Optional)</label>
+                    {{ form.due_date }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Assignment Title</label>
+                {{ form.title }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Assign To Student</label>
+                {{ form.assigned_to }}
+                <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+                    <i class="fas fa-info-circle"></i> Showing only {{ user.get_category_display }} category students
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Assignment Details</label>
+                {{ form.details }}
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                Please fix the form errors above.
+            </div>
+            {% endif %}
+
+            <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:8px;">
+                <button type="button" onclick="closeModal('assignModal')" class="btn btn-ghost">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Assign Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal">
+    <div class="modal" style="max-width:480px;">
+        <button class="modal-close" onclick="closeModal('reviewModal')"><i class="fas fa-times"></i></button>
+        <div class="modal-title" id="reviewModalTitle">Review Assignment</div>
+
+        <form method="post" id="reviewForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="reviewAction">
+
+            <div class="form-group">
+                <label class="form-label">Remarks for Student (Optional)</label>
+                <textarea name="teacher_remarks" class="form-input" rows="4" placeholder="Add feedback for the student..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button type="button" onclick="closeModal('reviewModal')" class="btn btn-ghost">Cancel</button>
+                <button type="submit" class="btn" id="reviewSubmitBtn">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openReviewModal(submissionId, action, title) {
+    const form = document.getElementById('reviewForm');
+    form.action = '/submission/' + submissionId + '/review/';
+    document.getElementById('reviewAction').value = action;
+
+    const titleEl = document.getElementById('reviewModalTitle');
+    const btn = document.getElementById('reviewSubmitBtn');
+
+    if (action === 'accept') {
+        titleEl.innerHTML = '✅ Accept: "' + title + '"';
+        btn.className = 'btn btn-success';
+        btn.innerHTML = '<i class="fas fa-check"></i> Accept Assignment';
+    } else {
+        titleEl.innerHTML = '❌ Reject: "' + title + '"';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="fas fa-times"></i> Reject Assignment';
+    }
+
+    openModal('reviewModal');
+}
+
+{% if form.errors %}
+// Auto-open modal if form had errors
+document.addEventListener('DOMContentLoaded', () => openModal('assignModal'));
+{% endif %}
+</script>
+{% endblock %}

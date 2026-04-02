@@ -1,0 +1,107 @@
+{% extends "assignments/base.html" %}
+{% block title %}Review Submission — Samyak{% endblock %}
+{% block page_title %}Review Submission{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px;">
+    <!-- Submission Header -->
+    <div style="background: linear-gradient(135deg, rgba(0,210,200,0.12), rgba(108,60,225,0.08)); border: 1px solid rgba(0,210,200,0.2); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+        <div style="font-size:12px; color:var(--brand-secondary); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Submission Details</div>
+        <div style="font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:6px;">{{ submission.assignment.title }}</div>
+        <div style="font-size:13px; color:var(--text-secondary);">
+            #{{ submission.assignment.assignment_number }} &nbsp;·&nbsp;
+            Submitted by: <strong style="color:var(--text-primary);">{{ submission.student.get_display_name }}</strong> &nbsp;·&nbsp;
+            {{ submission.submitted_at|date:"d M Y, h:i A" }}
+        </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start; margin-bottom:24px;">
+        <div class="card">
+            <div class="card-title" style="margin-bottom:16px;"><i class="fas fa-user" style="color:var(--brand-secondary)"></i> Student Info</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:3px;">Name</div>
+                    <div style="font-size:14px; font-weight:600;">{{ submission.student_name }}</div>
+                </div>
+                <div>
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:3px;">Course</div>
+                    <div style="font-size:14px; font-weight:600;">{{ submission.course_name }}</div>
+                </div>
+                <div>
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:3px;">Student ID</div>
+                    <div style="font-size:14px; font-weight:600;">{{ submission.student.student_id }}</div>
+                </div>
+                {% if submission.github_link %}
+                <div>
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:3px;">GitHub</div>
+                    <a href="{{ submission.github_link }}" target="_blank" style="color:var(--brand-secondary); font-size:13px; display:inline-flex; align-items:center; gap:6px; text-decoration:none;">
+                        <i class="fab fa-github"></i> View Repository
+                        <i class="fas fa-external-link-alt" style="font-size:10px;"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="margin-bottom:16px;"><i class="fas fa-file-alt" style="color:var(--brand-accent)"></i> Assignment</div>
+            <div style="font-size:14px; line-height:1.6; color:var(--text-secondary);">
+                {{ submission.assignment.details|truncatechars:300 }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Details -->
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-title" style="margin-bottom:16px;"><i class="fas fa-clipboard-list" style="color:var(--brand-primary)"></i> Student's Submission</div>
+        <div style="background:var(--bg-dark); border-radius:10px; padding:18px; font-size:14px; line-height:1.8; color:var(--text-secondary); white-space:pre-wrap;">{{ submission.submission_details }}</div>
+    </div>
+
+    <!-- Review Form -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:20px;"><i class="fas fa-gavel" style="color:var(--warning)"></i> Review Decision</div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Your Remarks (Optional)</label>
+                <textarea name="teacher_remarks" class="form-input" rows="4" placeholder="Write feedback for the student. This will be shown to them after review..."></textarea>
+            </div>
+
+            <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+                <a href="{% url 'dashboard' %}" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" name="action" value="reject" class="btn btn-danger" style="flex:1; justify-content:center;">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+                <button type="submit" name="action" value="accept" class="btn btn-success" style="flex:1; justify-content:center;">
+                    <i class="fas fa-check"></i> Accept
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Override form POST to add hidden action field
+document.querySelectorAll('button[name="action"]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const form = this.closest('form');
+        let hiddenAction = form.querySelector('input[name="action"]');
+        if (!hiddenAction) {
+            hiddenAction = document.createElement('input');
+            hiddenAction.type = 'hidden';
+            hiddenAction.name = 'action';
+            form.appendChild(hiddenAction);
+        }
+        hiddenAction.value = this.value;
+        form.submit();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "assignments/base.html" %}
+{% block title %}Submit Assignment — Samyak{% endblock %}
+{% block page_title %}Submit Assignment{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px;">
+    <!-- Assignment Info -->
+    <div style="background: linear-gradient(135deg, rgba(108,60,225,0.15), rgba(0,210,200,0.08)); border: 1px solid rgba(108,60,225,0.25); border-radius: 16px; padding: 24px; margin-bottom: 28px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <span style="background:rgba(108,60,225,0.2); color:var(--brand-secondary); font-size:12px; font-weight:700; padding:5px 12px; border-radius:8px;">#{{ assignment.assignment_number }}</span>
+            <span class="badge badge-{{ assignment.status }}">{{ assignment.status }}</span>
+        </div>
+        <div style="font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:8px;">{{ assignment.title }}</div>
+        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+            <i class="fas fa-user-tie"></i> Assigned by: {{ assignment.assigned_by.get_display_name }}
+            {% if assignment.due_date %}
+            &nbsp;·&nbsp; <i class="fas fa-calendar-times"></i> Due: {{ assignment.due_date|date:"d M Y" }}
+            {% endif %}
+        </div>
+        <div style="font-size:14px; color:var(--text-secondary); line-height:1.7; background:rgba(0,0,0,0.2); border-radius:10px; padding:14px 16px;">
+            {{ assignment.details|linebreaks }}
+        </div>
+    </div>
+
+    {% if assignment.status == 'rejected' and existing %}
+    <div class="alert alert-warning">
+        <i class="fas fa-redo"></i>
+        This assignment was rejected. You can revise and resubmit.
+        {% if existing.teacher_remarks %}
+        <div style="margin-top:6px; font-style:italic;">Teacher's note: "{{ existing.teacher_remarks }}"</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Submission Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-upload" style="color:var(--brand-primary)"></i>
+                {% if existing %}Update Your Submission{% else %}Submit Your Work{% endif %}
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Your Full Name *</label>
+                    {{ form.student_name }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Course Name *</label>
+                    {{ form.course_name }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">GitHub Repository Link</label>
+                {{ form.github_link }}
+                <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+                    <i class="fab fa-github"></i> Share your code repository (optional but recommended)
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Submission Details *</label>
+                {{ form.submission_details }}
+                <div style="font-size:11px; color:var(--text-muted); margin-top:5px;">
+                    Describe your solution, steps you followed, tools used, and any challenges faced.
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                Please fill in all required fields correctly.
+            </div>
+            {% endif %}
+
+            <div style="display:flex; gap:12px; align-items:center; margin-top:8px;">
+                <a href="{% url 'dashboard' %}" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center;">
+                    <i class="fas fa-paper-plane"></i>
+                    {% if existing %}Update Submission{% else %}Submit Assignment{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-fill name and course from user profile
+document.addEventListener('DOMContentLoaded', () => {
+    const nameField = document.querySelector('input[name="student_name"]');
+    const courseField = document.querySelector('input[name="course_name"]');
+    if (nameField && !nameField.value) nameField.value = "{{ user.get_display_name }}";
+    if (courseField && !courseField.value) courseField.value = "{{ user.course_name }}";
+});
+</script>
+{% endblock %}

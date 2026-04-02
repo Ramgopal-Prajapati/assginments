@@ -1,0 +1,188 @@
+{% extends "assignments/base.html" %}
+{% block title %}{{ assignment.title }} — Samyak{% endblock %}
+{% block page_title %}Assignment Detail{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px;">
+
+    <!-- Back -->
+    <a href="{% url 'dashboard' %}" class="btn btn-ghost btn-sm" style="margin-bottom: 20px;">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <!-- Header Card -->
+    <div style="background: linear-gradient(135deg, rgba(108,60,225,0.18), rgba(0,210,200,0.08));
+                border: 1px solid rgba(108,60,225,0.3); border-radius: 20px;
+                padding: 28px 32px; margin-bottom: 24px; position: relative; overflow: hidden;">
+        <div style="position:absolute;right:-10px;top:-10px;font-size:100px;opacity:0.05;">📋</div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <span style="background:rgba(108,60,225,0.2);color:var(--brand-secondary);
+                         font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;">
+                #{{ assignment.assignment_number }}
+            </span>
+            <span class="badge badge-{{ assignment.status }}">
+                {% if assignment.status == 'pending' %}<i class="fas fa-clock"></i>
+                {% elif assignment.status == 'submitted' %}<i class="fas fa-paper-plane"></i>
+                {% elif assignment.status == 'completed' %}<i class="fas fa-check-circle"></i>
+                {% else %}<i class="fas fa-times-circle"></i>{% endif %}
+                {{ assignment.get_status_display }}
+            </span>
+            {% if assignment.is_overdue %}
+            <span class="badge" style="background:rgba(255,76,106,0.15);color:var(--danger);">
+                <i class="fas fa-exclamation-triangle"></i> Overdue
+            </span>
+            {% endif %}
+        </div>
+
+        <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:12px;line-height:1.2;">
+            {{ assignment.title }}
+        </h1>
+
+        <div style="display:flex;flex-wrap:wrap;gap:20px;font-size:13px;color:var(--text-secondary);">
+            <span><i class="fas fa-user-tie" style="color:var(--brand-secondary)"></i>
+                Assigned by: <strong style="color:var(--text-primary)">{{ assignment.assigned_by.get_display_name }}</strong>
+            </span>
+            {% if user.role == 'faculty' %}
+            <span><i class="fas fa-user-graduate" style="color:var(--brand-secondary)"></i>
+                Assigned to: <strong style="color:var(--text-primary)">{{ assignment.assigned_to.get_display_name }}</strong>
+            </span>
+            {% endif %}
+            <span><i class="fas fa-calendar-plus" style="color:var(--brand-secondary)"></i>
+                Created: {{ assignment.created_at|date:"d M Y, h:i A" }}
+            </span>
+            {% if assignment.due_date %}
+            <span><i class="fas fa-calendar-times" style="color:var(--danger)"></i>
+                Due: {{ assignment.due_date|date:"d M Y" }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-title" style="margin-bottom:16px;">
+            <i class="fas fa-file-alt" style="color:var(--brand-primary)"></i> Assignment Details
+        </div>
+        <div style="font-size:14px;line-height:1.9;color:var(--text-secondary);
+                    background:var(--bg-dark);border-radius:12px;padding:20px;
+                    white-space:pre-wrap;">{{ assignment.details }}</div>
+    </div>
+
+    <!-- Submission Info (if exists) -->
+    {% if assignment.status != 'pending' %}
+    {% with sub=assignment.submission %}
+    {% if sub %}
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-clipboard-check" style="color:var(--brand-secondary)"></i>
+                Submission
+            </div>
+            <span style="font-size:12px;color:var(--text-muted);">{{ sub.submitted_at|date:"d M Y, h:i A" }}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div>
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Student Name</div>
+                <div style="font-size:14px;font-weight:600;">{{ sub.student_name }}</div>
+            </div>
+            <div>
+                <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">Course</div>
+                <div style="font-size:14px;font-weight:600;">{{ sub.course_name }}</div>
+            </div>
+        </div>
+
+        {% if sub.github_link %}
+        <div style="margin-bottom:16px;">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">GitHub Repository</div>
+            <a href="{{ sub.github_link }}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:8px;color:var(--brand-secondary);
+                      text-decoration:none;font-size:13px;background:rgba(0,210,200,0.08);
+                      border:1px solid rgba(0,210,200,0.2);padding:8px 14px;border-radius:8px;">
+                <i class="fab fa-github"></i> {{ sub.github_link }}
+                <i class="fas fa-external-link-alt" style="font-size:10px;opacity:0.6;"></i>
+            </a>
+        </div>
+        {% endif %}
+
+        <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:8px;">Submission Details</div>
+            <div style="font-size:14px;line-height:1.8;color:var(--text-secondary);
+                        background:var(--bg-dark);border-radius:10px;padding:16px;white-space:pre-wrap;">{{ sub.submission_details }}</div>
+        </div>
+
+        {% if sub.teacher_remarks %}
+        <div style="margin-top:16px;padding:14px 16px;border-radius:10px;
+            {% if sub.is_accepted %}background:rgba(0,200,150,0.08);border:1px solid rgba(0,200,150,0.25);
+            {% else %}background:rgba(255,76,106,0.08);border:1px solid rgba(255,76,106,0.25);{% endif %}">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;
+                {% if sub.is_accepted %}color:var(--success);{% else %}color:var(--danger);{% endif %}">
+                <i class="fas fa-comment-dots"></i> Teacher's Remarks
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);">{{ sub.teacher_remarks }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        {% if user.role == 'student' %}
+            {% if assignment.status == 'pending' %}
+            <a href="{% url 'submit_assignment' assignment.id %}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Submit Assignment
+            </a>
+            <button onclick="confirmReject({{ assignment.id }}, '{{ assignment.title|escapejs }}')" class="btn btn-danger">
+                <i class="fas fa-times"></i> Refuse Assignment
+            </button>
+            {% elif assignment.status == 'rejected' %}
+            <a href="{% url 'submit_assignment' assignment.id %}" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Resubmit
+            </a>
+            {% endif %}
+        {% else %}
+            {% if assignment.status == 'submitted' %}
+            <a href="{% url 'review_submission' assignment.submission.id %}" class="btn btn-primary">
+                <i class="fas fa-eye"></i> Review Submission
+            </a>
+            {% endif %}
+        {% endif %}
+        <a href="{% url 'dashboard' %}" class="btn btn-ghost">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal" style="max-width:400px;">
+        <button class="modal-close" onclick="closeModal('rejectModal')"><i class="fas fa-times"></i></button>
+        <div style="text-align:center;padding:8px 0 20px;">
+            <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+            <div class="modal-title" style="font-size:18px;">Refuse Assignment?</div>
+            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;">
+                Are you sure you want to refuse <strong id="rejectTitle"></strong>?
+            </p>
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button onclick="closeModal('rejectModal')" class="btn btn-ghost">Cancel</button>
+                <a href="#" id="rejectLink" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Yes, Refuse
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmReject(id, title) {
+    document.getElementById('rejectTitle').textContent = '"' + title + '"';
+    document.getElementById('rejectLink').href = '/assignment/' + id + '/reject/';
+    openModal('rejectModal');
+}
+</script>
+{% endblock %}

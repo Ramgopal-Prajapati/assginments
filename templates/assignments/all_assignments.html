@@ -1,0 +1,64 @@
+{% extends "assignments/base.html" %}
+{% block title %}All Assignments — Samyak{% endblock %}
+{% block page_title %}All Assignments{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div style="display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+    <a href="?status=" class="btn {% if not status_filter %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">All</a>
+    <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">
+        <i class="fas fa-clock"></i> Pending
+    </a>
+    <a href="?status=submitted" class="btn {% if status_filter == 'submitted' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">
+        <i class="fas fa-paper-plane"></i> Submitted
+    </a>
+    <a href="?status=completed" class="btn {% if status_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">
+        <i class="fas fa-check"></i> Completed
+    </a>
+    <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm">
+        <i class="fas fa-times"></i> Rejected
+    </a>
+    <span style="color:var(--text-muted); font-size:13px; margin-left:auto;">{{ assignments.count }} results</span>
+</div>
+
+{% for a in assignments %}
+<div class="assignment-card {{ a.status }}">
+    <div>
+        <div class="assignment-num">#{{ a.assignment_number }}</div>
+    </div>
+    <div class="assignment-body">
+        <div class="assignment-title">{{ a.title }}</div>
+        <div class="assignment-meta">
+            {% if user.role == 'faculty' %}
+            <span><i class="fas fa-user-graduate"></i> {{ a.assigned_to.get_display_name }}</span>
+            {% else %}
+            <span><i class="fas fa-chalkboard-teacher"></i> {{ a.assigned_by.get_display_name }}</span>
+            {% endif %}
+            <span><i class="fas fa-calendar"></i> {{ a.created_at|date:"d M Y" }}</span>
+            {% if a.due_date %}
+            <span><i class="fas fa-calendar-times"></i> Due: {{ a.due_date|date:"d M Y" }}</span>
+            {% endif %}
+        </div>
+        <div style="font-size:13px; color:var(--text-muted); margin-top:8px; line-height:1.5;">{{ a.details|truncatechars:200 }}</div>
+    </div>
+    <div class="assignment-actions" style="flex-direction:column; align-items:flex-end;">
+        <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+        {% if user.role == 'student' and a.status == 'pending' %}
+        <a href="{% url 'submit_assignment' a.id %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
+            <i class="fas fa-upload"></i> Submit
+        </a>
+        {% elif user.role == 'faculty' and a.status == 'submitted' %}
+        <a href="{% url 'review_submission' a.submission.id %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
+            <i class="fas fa-eye"></i> Review
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<div class="empty-state">
+    <div class="empty-icon"><i class="fas fa-search"></i></div>
+    <div class="empty-title">No Assignments Found</div>
+    <div class="empty-desc">No assignments match your current filter.</div>
+</div>
+{% endfor %}
+{% endblock %}
