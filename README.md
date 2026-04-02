@@ -1,4 +1,4 @@
-# 🎓 Samyak Computer Classes — Assignment System
+# 🎓 Samyak Computer Classes By Ram sir — Assignment System
 ### Ram Sir | Indore | Full Django Assignment Portal
 
 A complete assignment management system for students and faculty.  
@@ -285,4 +285,4 @@ python manage.py setup_demo
 
 ---
 
-Built with ❤️ for Samyak Computer Classes, Indore
+Built with ❤️ for Samyak Computer Classes students By Ram sir, Indore
